@@ -1,0 +1,15 @@
+name: casfinder
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - conda-forge::pip
+  - conda-forge::pandas
+  - conda-forge::biopython
+  - bioconda::hmmer
+  - bioconda::seqkit
+  - bioconda::mmseqs2
+  - bioconda::piler-cr
+  - bioconda::prodigal-gv
+  - bioconda::crisper_recognition_tool
+  
