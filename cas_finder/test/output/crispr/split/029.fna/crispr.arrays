@@ -1,2 +1,0 @@
-contig_id	array_num	start_pos	end_pos	truncated	num_spacers	spacer_length	percent_id	repeat_length	consensus_repeat	tool
-sample_29	1	1109	2041	neither	14	26.2	97.78	36	GTCTATACGGCTCTTTAAATTTCTACTATTGTAGAT	crt

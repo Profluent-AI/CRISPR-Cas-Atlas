@@ -1,3 +1,0 @@
-contig_id	contig_length	array_num	start_pos	end_pos	truncated	num_spacers	percent_id	spacer_length	repeat_length	consensus_repeat
-sample_14	8122	1	6657	6891	neither	3	98.68	20.75	38	AATTGTAGTTCCCTAATTTTTCTTGGTATGTTATAATT
-sample_14	8122	2	6986	7808	neither	12	100.0	27.31	36	ATTGTAGTTCCCTAATTTTTCTTGGTATGTTATAAT

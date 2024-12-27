@@ -1,3 +1,0 @@
-contig_id	array_num	start_pos	end_pos	truncated	num_spacers	spacer_length	percent_id	repeat_length	consensus_repeat	tool
-sample_14	1	6463	7874	neither	21	28.18	99.62	36	ATTGTAGTTCCCTAATTTTTCTTGGTATGTTATAAT	crt
-sample_14	2	6986	7808	neither	12	27.31	100.0	36	ATTGTAGTTCCCTAATTTTTCTTGGTATGTTATAAT	pilercr
