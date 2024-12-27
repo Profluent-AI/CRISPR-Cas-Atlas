@@ -93,18 +93,22 @@ An example record can be found in the file `example.json` and is shown below. Th
  }
 ```
 
+## CRISPR-Cas Prediction
+
+To access the pipeline used to construct the CRISPR-Cas Atlas, please see this [README](docs/CAS_FINDER.md).
+
 ## License
 
-This data is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
+This data and code is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
 
 **Usage Restriction**:  
-This data is provided for *academic and non-commercial purposes only*. Any commercial use is strictly prohibited without prior permission.
+This data and code is provided for *academic and non-commercial purposes only*. Any commercial use is strictly prohibited without prior permission.
 
 You can view the full license [here](https://creativecommons.org/licenses/by-nc/4.0/).
 
 ## Cite this work
 
-If you use the CRISPR-Cas Atlas in your research, please cite the following preprint:
+If you use the CRISPR-Cas Atlas or search tool in your research, please cite the following preprint:
 
 ```bibtex
 @article{profluent2024opencrispr,

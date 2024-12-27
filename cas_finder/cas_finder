@@ -1,0 +1,257 @@
+#!/bin/bash
+
+# ---------------------------------
+# Config file
+# ---------------------------------
+
+fetch_config() {
+    CONFIG=`dirname ${0}`/config
+    if [ ! -f $CONFIG ]
+    then 
+        echo 'Config file not found' 1>&2
+        exit 1
+    else
+        echo $CONFIG
+    fi
+}
+CONFIG=$(fetch_config)
+source $CONFIG
+
+# ---------------------------------
+# Functions
+# ---------------------------------
+
+module_start () {
+  START=`date +%s`
+}
+
+time_elapsed () {
+  STOP=`date +%s`
+  SECONDS=$(( $STOP - $START ))
+  echo "$1: $SECONDS seconds"
+}
+
+check_exit_code () {
+  if [ ! $? -eq 0 ]; then echo "error: non-zero exit code: $1"  1>&2; exit; fi
+}
+
+usage() {
+        echo "Usage: $(basename $0) [options] <contigs> <outdir> " 1>&2 
+        echo 1>&2
+        echo 'positional arguments:' 1>&2
+        echo ' contigs   input seqs in fasta format' 1>&2
+        echo ' outdir    output directory' 1>&2
+        echo  1>&2
+        echo 'options:' 1>&2
+        echo '      -n   sample or assembly name' 1>&2
+        echo '      -m   minimum contig length' 1>&2
+        echo '      -f   number of flanking bases around each crispr array' 1>&2
+        echo '      -t   number of threads to use' 1>&2
+        echo '' 1>&2
+        echo "for other options and default values, see: ${CONFIG}" 1>&2
+        exit 1
+}
+
+# ---------------------------------
+# Command line options
+# ---------------------------------
+
+# print command line usage
+if [[ ${#} -eq 0 ]]; then
+   usage
+fi
+
+# fetch command line options
+optstring=":h:t:m:f:d:"
+while getopts ${optstring} arg; do
+  case "${arg}" in
+    h ) usage ;;   
+    t ) CPU=$OPTARG;;
+    n ) SAMPLE=$OPTARG;;
+    m ) MIN_CONTIG_LEN=$OPTARG;;
+    f ) ARRAY_FLANK_BP=$OPTARG;;
+    ? )
+      echo "Invalid option: -${OPTARG}" 1>&2
+      echo 1>&2
+      usage
+      ;;
+  esac
+done
+FNA=${@:$OPTIND:1}
+OUT=${@:$OPTIND+1:1}
+
+# check command line options
+if [ -z "$DATA_DIR" ]
+then 
+    echo "data directory variable not set. Use -d option or \$DATA_DIR environment variable" 1>&2
+    exit
+fi
+
+if [ -z "$OUT" ]
+then 
+    echo "output dir variable not set" 1>&2
+    exit
+fi
+
+if [ -z "$SAMPLE" ]
+then 
+    echo "Warning: no sample name set; using default" 1>&2
+    SAMPLE=cas_finder
+fi
+
+if [ ! -f "${DATA_DIR}/profiles.hmm" ]
+then 
+    echo "profiles.hmm not found in \$DATA_DIR" 1>&2
+    exit
+fi
+
+if [ ! -f "$FNA" ]
+then 
+    echo "input FASTA not found or empty" 1>&2
+    exit
+fi
+
+if [ ! -f "$CRT" ]
+then 
+    echo "CRT environment variable not set" 1>&2
+    exit
+fi
+
+# check dependencies
+programs=(seqkit java hmmsearch parallel crispr_contigs.py )
+for i in "${programs[@]}"
+do
+    if ! command -v $i &> /dev/null
+    then
+        echo "$i could not be found" 1>&2
+        exit
+    fi    
+done
+
+# print parameters
+echo "PARAMETERS"
+echo "input:" $FNA
+echo "sample:" $SAMPLE
+echo "outdir:" $OUT
+echo "cpus:" $CPU
+echo "min contig length:" $MIN_CONTIG_LEN
+echo "flanking bp:" $ARRAY_FLANK_BP
+echo
+
+# make directories
+mkdir -p $OUT/tmp/log
+mkdir -p $OUT/tmp/fna
+mkdir -p $OUT/tmp/faa
+mkdir -p $OUT/tmp/ffn
+mkdir -p $OUT/tmp/crispr
+
+# ---------------------------------
+# Main program
+# ---------------------------------
+
+echo "MAIN PROGRAM"
+
+##
+## PARSE CONTIGS
+##
+
+module_start
+# filter contigs by length and rename
+seqkit seq --threads $CPU --quiet --remove-gaps --min-len $MIN_CONTIG_LEN $FNA \
+    | rename_contigs.py $SAMPLE > $OUT/tmp/fna/pruned_contigs.fna    
+if [ ! -s $OUT/tmp/fna/pruned_contigs.fna ]
+then
+    echo "error: there are no contigs >${MIN_CONTIG_LEN} bp; exiting" 
+    echo "{}" > $OUT/tmp/crispr-cas.json
+    exit
+fi
+# split input file
+if [ $CPU -gt 1 ]
+then
+    seqkit split2 $OUT/tmp/fna/pruned_contigs.fna \
+        --threads $CPU --force --quiet --by-part $CPU --by-part-prefix "" --out-dir $OUT/tmp/fna/split
+else
+    mkdir -p $OUT/tmp/fna/split
+    ln -sf $OUT/tmp/fna/pruned_contigs.fna $OUT/tmp/fna/split/001.fna
+fi
+time_elapsed "process contigs"
+
+##
+## PREDICT CRISPR
+##
+
+module_start
+#echo 'ls $OUT/tmp/fna/split | parallel "identify_crispr.py -i $OUT/tmp/fna/split/{} -o $OUT/tmp/crispr/split/{} -c $CRT"'
+ls $OUT/tmp/fna/split | parallel "\
+    identify_crispr.py \
+    -i $OUT/tmp/fna/split/{} \
+    -o $OUT/tmp/crispr/split/{} \
+    -c $CRT"
+ls $OUT/tmp/fna/split | parallel "\
+    merge_crispr.py \
+    $OUT/tmp/crispr/split/{}/crt \
+    $OUT/tmp/crispr/split/{}/pilercr \
+    $OUT/tmp/crispr/split/{}/crispr"
+head -1 $OUT/tmp/crispr/split/001.fna/crispr.arrays > $OUT/tmp/crispr/crispr_arrays.tsv
+head -1 $OUT/tmp/crispr/split/001.fna/crispr.spacers > $OUT/tmp/crispr/crispr_spacers.tsv
+cat $OUT/tmp/crispr/split/*.fna/crispr.arrays | grep -v ^contig_id >> $OUT/tmp/crispr/crispr_arrays.tsv
+cat $OUT/tmp/crispr/split/*.fna/crispr.spacers | grep -v ^contig_id >> $OUT/tmp/crispr/crispr_spacers.tsv
+if [ $(sed 1d $OUT/tmp/crispr/crispr_arrays.tsv | wc -l) == 0 ]
+then
+    echo ""
+    echo "error: no crispr arrays found; exiting"
+    echo "{}" > $OUT/tmp/crispr-cas.json
+    exit
+fi
+time_elapsed "predict crispr"
+
+##
+## EXTRACT CRISPR REGIONS
+##
+
+module_start
+crispr_contigs.py $OUT/tmp/fna/pruned_contigs.fna \
+    $OUT/tmp/crispr/crispr_arrays.tsv \
+    --min_spacers $MIN_SPACERS \
+    --flanking $ARRAY_FLANK_BP \
+    > $OUT/tmp/fna/crispr_contigs.fna
+rm -r $OUT/tmp/fna/split
+seqkit split2 $OUT/tmp/fna/crispr_contigs.fna \
+    --force --quiet --by-part $CPU --by-part-prefix "" --out-dir $OUT/tmp/fna/split
+time_elapsed "extract crispr regions"
+
+##
+## PREDICT PROTEINS
+##
+
+module_start
+mkdir -p $OUT/tmp/faa/split $OUT/tmp/ffn/split
+ls $OUT/tmp/fna/split \
+    | parallel "prodigal-gv -i $OUT/tmp/fna/split/{} -a $OUT/tmp/faa/split/{} -d $OUT/tmp/ffn/split/{} -p meta > /dev/null 2> $OUT/tmp/log/prodigal_{}"
+cat $OUT/tmp/faa/split/* > $OUT/tmp/faa/crispr_contigs.faa
+cat $OUT/tmp/ffn/split/* > $OUT/tmp/ffn/crispr_contigs.ffn
+time_elapsed "predict proteins"
+
+##
+## ANNOTATE PROTEINS
+##
+
+module_start
+mkdir -p $OUT/tmp/hmm/split
+ls $OUT/tmp/faa/split \
+     | parallel "hmmsearch --cpu 0 --noali --domtblout $OUT/tmp/hmm/split/{} $DATA_DIR/profiles.hmm $OUT/tmp/faa/split/{} > /dev/null 2> $OUT/tmp/log/hmmsearch_{}"
+grep --no-filename --no-group-separator -v '^#' $OUT/tmp/hmm/split/* > $OUT/tmp/hmm/hmm_full.domtblout
+domtblout_to_tsv.py $OUT/tmp/hmm/hmm_full.domtblout > $OUT/tmp/hmm/hmm_full.tsv
+time_elapsed "annotate proteins"
+
+##
+## IDENTIFY OPERONS
+##
+
+module_start
+find_operons.py \
+    --max_unknown $OPERON_MAX_UNK \
+    --max_bp $OPERON_MAX_DIST \
+    --flanking $OPERON_FLANKING_BP \
+    --db $DATA_DIR $OUT $SAMPLE
+time_elapsed "identify operons"

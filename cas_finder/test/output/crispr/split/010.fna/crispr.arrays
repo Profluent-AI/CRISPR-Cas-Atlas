@@ -1,0 +1,2 @@
+contig_id	array_num	start_pos	end_pos	truncated	num_spacers	spacer_length	percent_id	repeat_length	consensus_repeat	tool
+sample_10	1	6063	11721	neither	76	36.49	100.0	37	CTCAGAGACTAAGTTCCAGTAAAACAAGGATTAAGAC	pilercr

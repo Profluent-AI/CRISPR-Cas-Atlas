@@ -1,0 +1,13 @@
+# defaults
+CPU=1
+MIN_CONTIG_LEN=5000 # minimum contig length to keep
+ARRAY_FLANK_BP=20000 # extracted bp flanking each crispr
+MIN_SPACERS=2 # minimum spacers to keep array
+OPERON_MAX_UNK=3 # maximum unknown genes between elements in operon 
+OPERON_MAX_DIST=5000 # maximum distance between elements in operon 
+OPERON_FLANKING_BP=1000 # additional bp flanking each operon
+SRC_DIR=`dirname ${0}`
+DATA_DIR=$SRC_DIR/db
+CRT=$SRC_DIR/bin/CRT1.2-CLI.jar
+PATH=$PATH:$SRC_DIR/scripts
+PATH=$PATH:$SRC_DIR/bin
