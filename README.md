@@ -8,7 +8,7 @@ More information about OpenCRISPR can be found at https://github.com/Profluent-A
 
 Download the database from Google Cloud Storage:
 ```bash
-wget https://storage.googleapis.com/profluent-public/crispr-cas-atlas/crispr-cas-atlas-v1.0.json
+wget https://storage.googleapis.com/crispr-cas-atlas-xy7q13lmk9/crispr-cas-atlas-v1.0.json
 ```
 
 ## Data format
@@ -59,7 +59,7 @@ An example record can be found in the file `example.json` and is shown below. Th
    "gene_overlap": "00",
    "terminator": 1,
    "confidence": "High",
-   "seq_unmasked": "GATTGGGAAATGCGCTCTGGACGCTAACAAGCAGATGACTTGCAAAAGTCTGGATGCACAAAATGAAGAGGCCGCTATATGCGGCCTCTTGTCTTTTCAGA"
+   "tracr": "GATTGGGAAATGCGCTCTGGACGCTAACAAGCAGATGACTTGCAAAAGTCTGGATGCACAAAATGAAGAGGCCGCTATATGCGGCCTCTTGTCTTTTCAGA"
   },
   "cas": [
    {
@@ -95,7 +95,7 @@ An example record can be found in the file `example.json` and is shown below. Th
 
 ## CRISPR-Cas Prediction
 
-To access the pipeline used to construct the CRISPR-Cas Atlas, please see this [README](docs/CAS_FINDER.md).
+To access the pipeline used to construct the CRISPR-Cas Atlas, please see this [README](docs/CAS_FINDER.md). For the list of genomes and metagenomes analyzed, see `datasets.list`
 
 ## License
 
