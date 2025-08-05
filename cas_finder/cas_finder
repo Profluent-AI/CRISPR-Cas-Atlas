@@ -62,7 +62,7 @@ if [[ ${#} -eq 0 ]]; then
 fi
 
 # fetch command line options
-optstring=":h:t:m:f:d:"
+optstring=":h:t:n:m:f:d:"
 while getopts ${optstring} arg; do
   case "${arg}" in
     h ) usage ;;   

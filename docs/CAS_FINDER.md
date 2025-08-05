@@ -15,7 +15,7 @@ bash install.sh
 Run example
 
 ```bash
-cas_finder -s sample001 -t 32 cas_finder/test/input.fna output
+cas_finder -n sample001 -t 32 cas_finder/test/input.fna output
 ```
 
 Usage
